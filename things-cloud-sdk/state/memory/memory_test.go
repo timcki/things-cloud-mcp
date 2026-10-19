@@ -499,12 +499,37 @@ func TestStateUpdateRejectsUnknownKind(t *testing.T) {
 	s := NewState()
 	err := s.Update(things.Item{
 		UUID:   "future-item",
-		Kind:   things.ItemKind("Task7"),
+		Kind:   things.ItemKind("Task8"),
 		Action: things.ItemActionCreated,
 		P:      []byte(`{}`),
 	})
 	if err == nil {
 		t.Fatal("expected unknown kind error")
+	}
+}
+
+func TestStateUpdateReadsTask7LikeTask6(t *testing.T) {
+	s := NewState()
+	err := s.Update(things.Item{
+		UUID:   "task7-item",
+		Kind:   things.ItemKindTask7,
+		Action: things.ItemActionCreated,
+		P:      []byte(`{"tt":"From Task7"}`),
+	}, things.Item{
+		UUID:   "task7-item",
+		Kind:   things.ItemKindTask,
+		Action: things.ItemActionModified,
+		P:      []byte(`{"tt":"Modified by Task6"}`),
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	task, ok := s.Tasks["task7-item"]
+	if !ok {
+		t.Fatal("Task7 item was not stored")
+	}
+	if task.Title != "Modified by Task6" {
+		t.Fatalf("title = %q, want Task6 modification applied", task.Title)
 	}
 }
 
